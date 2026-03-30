@@ -19,15 +19,15 @@ df = pd.read_csv(url)
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
-# --- NORMALIZAR Y CENTRAR (🔥 FIX CLAVE) ---
-x_min, x_max = df["results.x"].min(), df["results.x"].max()
-y_min, y_max = df["results.y"].min(), df["results.y"].max()
+# --- CENTRADO REAL (Z-SCORE 🔥) ---
+x_mean = df["results.x"].mean()
+y_mean = df["results.y"].mean()
 
-df["x_norm"] = (df["results.x"] - x_min) / (x_max - x_min)
-df["y_norm"] = (df["results.y"] - y_min) / (y_max - y_min)
+x_std = df["results.x"].std()
+y_std = df["results.y"].std()
 
-df["x_centered"] = df["x_norm"] - 0.5
-df["y_centered"] = df["y_norm"] - 0.5
+df["x_centered"] = (df["results.x"] - x_mean) / x_std
+df["y_centered"] = (df["results.y"] - y_mean) / y_std
 
 # --- FILTROS ---
 col1, col2 = st.columns(2)
@@ -76,8 +76,8 @@ for _, row in filtered.iterrows():
     net.add_node(
         row["id"],
         label=" ",  # 🔥 sin labels visibles
-        x=row["x_centered"] * 1200,   # 🔥 escala ajustada
-        y=row["y_centered"] * 1200,
+        x=row["x_centered"] * 300,   # 🔥 escala ajustada
+        y=row["y_centered"] * 300,
         color=color,
         size=2,  # 🔥 nodos chicos
         borderWidth=0,
