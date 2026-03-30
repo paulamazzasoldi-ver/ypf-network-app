@@ -42,31 +42,34 @@ if category:
 
 # --- RED ---
 net = Network(height="650px", width="100%")
-net.set_options("""
-{
-  "physics": {
-    "enabled": false
-  }
-}
-""")
+
+# 🔥 SIN MOVIMIENTO
+net.toggle_physics(False)
+
+# 🔥 layout más estable
+net.barnes_hut()
+
+# 🔥 edges más limpios
+net.options.edges.smooth = False
+
 color_map = {
     "central": "#2ecc71",
     "intermediary": "#f39c12",
     "peripheral": "#e74c3c"
 }
 
-# --- NODOS (MUY CHICOS 🔥) ---
+# --- NODOS ---
 for _, row in filtered.iterrows():
 
     color = color_map.get(row["results.category"], "#95a5a6")
 
     net.add_node(
         row["id"],
-        label=" ",
+        label=" ",  # 🔥 evita mostrar ID
         x=row["results.x"] / 1e7,
         y=row["results.y"] / 1e7,
         color=color,
-        size=2,  # 🔥 CLAVE: bien chico
+        size=2,  # 🔥 nodos chicos
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
@@ -75,39 +78,24 @@ for _, row in filtered.iterrows():
         """
     )
 
-# --- EDGES (FULL DENSITY 🔥) ---
+# --- EDGES (densos pero controlados) ---
 nodes = filtered[["id", "results.category"]].values.tolist()
 
 for node_id, category in nodes:
 
     color = color_map.get(category, "#cccccc")
 
-    # 🔥 MÁS conexiones → densidad real
-    connections = random.sample(nodes, min(8, len(nodes)))
+    connections = random.sample(nodes, min(5, len(nodes)))
 
     for target_id, _ in connections:
         if node_id != target_id:
             net.add_edge(
                 node_id,
                 target_id,
-                width=0.2,  # 🔥 más fino
-                color=color,  # 🔥 color correcto
-                opacity=0.08  # 🔥 súper transparente
+                width=0.2,
+                color=color,
+                opacity=0.08
             )
-
-# --- ESTILO VISUAL ---
-net.set_options("""
-{
-  "edges": {
-    "smooth": {
-      "type": "continuous"
-    }
-  },
-  "interaction": {
-    "hover": true
-  }
-}
-""")
 
 # --- RENDER ---
 html = net.generate_html()
