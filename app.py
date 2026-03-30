@@ -5,6 +5,15 @@ import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
+# --- CSS fix (interacción) ---
+st.markdown("""
+<style>
+iframe {
+    pointer-events: auto;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("Mapa de Influencia Organizacional")
 
 # --- Cargar data ---
@@ -21,14 +30,18 @@ df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 # --- Filtros ---
 col1, col2 = st.columns(2)
 
-departments = df["department"].dropna().unique()
-categories = df["results.category"].dropna().unique()
+departments = sorted(df["department"].dropna().unique())
+categories = sorted(df["results.category"].dropna().unique())
 
 with col1:
     dept = st.selectbox("Departamento", departments)
 
 with col2:
-    category = st.multiselect("Categoría", categories, default=categories)
+    category = st.multiselect(
+        "Categoría",
+        categories,
+        default=categories
+    )
 
 # --- Filtrar ---
 filtered = df[df["department"] == dept]
@@ -39,9 +52,26 @@ if category:
 # --- Crear red ---
 net = Network(height="600px", width="100%")
 
-# 🔥 desactivar física (usamos posiciones reales)
+# 🔥 usamos layout real (sin física)
 net.toggle_physics(False)
 
+# estilo visual
+net.set_options("""
+{
+  "nodes": {
+    "shape": "dot",
+    "scaling": {
+      "min": 3,
+      "max": 6
+    }
+  },
+  "interaction": {
+    "hover": true
+  }
+}
+""")
+
+# --- Nodos ---
 for _, row in filtered.iterrows():
 
     color = {
@@ -52,20 +82,19 @@ for _, row in filtered.iterrows():
 
     net.add_node(
         row["id"],
-        label=row["name"],
-        x=row["results.x"] / 1e7,   # escala para que se vea bien
+        label="",  # 🔥 sin nombres visibles
+        x=row["results.x"] / 1e7,
         y=row["results.y"] / 1e7,
         color=color,
-        size=10,  # tamaño uniforme como el original
+        size=4,  # 🔥 nodos chicos tipo original
+        borderWidth=0.5,
         title=f"""
-        {row['name']}<br>
+        <b>{row['name']}</b><br>
         Rank: {row['results.rank']}<br>
-        Category: {row['results.category']}
+        Categoría: {row['results.category']}<br>
+        Influence: {row['results.influence']}
         """
     )
-
-# ❗ Opcional: sin edges (como visual limpio)
-# Si querés, después agregamos edges suaves
 
 # --- Render ---
 html = net.generate_html()
