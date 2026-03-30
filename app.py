@@ -83,8 +83,7 @@ color_map = {
 # =========================
 # ESCALA
 # =========================
-scale = 250000
-
+scale = 350000
 # =========================
 # NODOS
 # =========================
@@ -120,7 +119,7 @@ for _, row in filtered.iterrows():
 def distance(a, b):
     return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
-threshold = 0.08  # 🔥 ajustar esto es CLAVE
+threshold = 0.15  # 🔥 ajustar esto es CLAVE
 
 for i in range(len(nodes_data)):
     id1, x1, y1, color1 = nodes_data[i]
@@ -131,7 +130,7 @@ for i in range(len(nodes_data)):
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
 
-    edge_color = f"rgba({r},{g},{b},0.08)"  # 🔥 más visible que antes
+    edge_color = f"rgba({r},{g},{b},0.15)"  # 🔥 más visible que antes
 
     for j in range(i+1, len(nodes_data)):
         id2, x2, y2, _ = nodes_data[j]
