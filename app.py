@@ -76,7 +76,7 @@ for _, row in filtered.iterrows():
         x=row["x_centered"] / 1e7,
         y=row["y_centered"] / 1e7,
         color=color,
-        size=2,  # 🔥 nodos chicos tipo original
+        size=0.5,  # 🔥 nodos chicos tipo original
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
