@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from pyvis.network import Network
 import streamlit.components.v1 as components
-import random
+import math
 
 st.set_page_config(layout="wide")
 
@@ -66,7 +66,6 @@ net.toggle_physics(False)
 net.options.layout = {"improvedLayout": False}
 net.options.edges.smooth = False
 
-# 🔥 nodos bien renderizados (esto va acá)
 net.options.nodes = {
     "shape": "dot",
     "font": {"size": 0}
@@ -82,58 +81,66 @@ color_map = {
 }
 
 # =========================
-# ESCALA (más aire entre nodos)
+# ESCALA
 # =========================
-scale = 250000  # 🔥 más separación
+scale = 250000
 
 # =========================
 # NODOS
 # =========================
+nodes_data = []
+
 for _, row in filtered.iterrows():
 
     color = color_map.get(row["results.category"], "#95a5a6")
 
+    x = row["x_centered"] / scale
+    y = row["y_centered"] / scale
+
     net.add_node(
         row["id"],
         label=" ",
-        x=row["x_centered"] / scale,
-        y=row["y_centered"] / scale,
+        x=x,
+        y=y,
         color=color,
-        size=3,  # 🔥 más visibles
+        size=3,
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
         Rank: {row['results.rank']}<br>
-        Categoría: {row['results.category']}<br>
-        Influence: {row['results.influence']}
+        Categoría: {row['results.category']}
         """
     )
 
+    nodes_data.append((row["id"], x, y, color))
+
 # =========================
-# EDGES (COLOR + TRANSPARENCIA PRO)
+# EDGES POR CERCANÍA (🔥 CLAVE)
 # =========================
-nodes = filtered[["id", "results.category"]].values.tolist()
+def distance(a, b):
+    return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
-for node_id, cat in nodes:
+threshold = 0.08  # 🔥 ajustar esto es CLAVE
 
-    base_color = color_map.get(cat, "#cccccc")
+for i in range(len(nodes_data)):
+    id1, x1, y1, color1 = nodes_data[i]
 
-    # 🔥 convertir HEX → RGBA
-    hex_color = base_color.replace("#", "")
+    # convertir color a RGBA
+    hex_color = color1.replace("#", "")
     r = int(hex_color[0:2], 16)
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
 
-    edge_color = f"rgba({r},{g},{b},0.05)"  # 🔥 suave tipo original
+    edge_color = f"rgba({r},{g},{b},0.08)"  # 🔥 más visible que antes
 
-    connections = random.sample(nodes, min(6, len(nodes)))
+    for j in range(i+1, len(nodes_data)):
+        id2, x2, y2, _ = nodes_data[j]
 
-    for target_id, _ in connections:
-        if node_id != target_id:
+        if distance((x1, y1), (x2, y2)) < threshold:
             net.add_edge(
-                node_id,
-                target_id,
-                width=0.1,
+                id1,
+                id2,
+                width=0.2,
                 color=edge_color
             )
 
