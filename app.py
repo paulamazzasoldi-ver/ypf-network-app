@@ -96,13 +96,14 @@ scale = 550000
 # =========================
 nodes_data = []
 
+scale = 600
+
 for _, row in filtered.iterrows():
 
     color = color_map.get(row["results.category"], "#95a5a6")
 
-   scale = 600  # 🔥 ahora esto es visual, no correctivo
-    x=row["x_norm"] * scale,
-    y=row["y_norm"] * scale,
+    x = row["x_norm"] * scale
+    y = row["y_norm"] * scale
 
     net.add_node(
         row["id"],
