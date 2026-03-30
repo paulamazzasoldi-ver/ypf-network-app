@@ -19,12 +19,15 @@ df = pd.read_csv(url)
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
-# --- CENTRAR COORDENADAS (🔥 CLAVE) ---
-x_mean = df["results.x"].mean()
-y_mean = df["results.y"].mean()
+# --- NORMALIZAR Y CENTRAR (🔥 FIX CLAVE) ---
+x_min, x_max = df["results.x"].min(), df["results.x"].max()
+y_min, y_max = df["results.y"].min(), df["results.y"].max()
 
-df["x_centered"] = df["results.x"] - x_mean
-df["y_centered"] = df["results.y"] - y_mean
+df["x_norm"] = (df["results.x"] - x_min) / (x_max - x_min)
+df["y_norm"] = (df["results.y"] - y_min) / (y_max - y_min)
+
+df["x_centered"] = df["x_norm"] - 0.5
+df["y_centered"] = df["y_norm"] - 0.5
 
 # --- FILTROS ---
 col1, col2 = st.columns(2)
@@ -50,13 +53,13 @@ if category:
 # --- RED ---
 net = Network(height="650px", width="100%")
 
-# 🔥 sin movimiento
+# 🔥 sin física (NO movimiento)
 net.toggle_physics(False)
 
 # 🔥 layout estable
 net.barnes_hut()
 
-# 🔥 edges sin curvas raras
+# 🔥 edges rectos
 net.options.edges.smooth = False
 
 color_map = {
@@ -72,11 +75,11 @@ for _, row in filtered.iterrows():
 
     net.add_node(
         row["id"],
-        label=" ",  # 🔥 evita mostrar ID
-        x=row["x_centered"] / 1e7,
-        y=row["y_centered"] / 1e7,
+        label=" ",  # 🔥 sin labels visibles
+        x=row["x_centered"] * 1200,   # 🔥 escala ajustada
+        y=row["y_centered"] * 1200,
         color=color,
-        size=0.5,  # 🔥 nodos chicos tipo original
+        size=2,  # 🔥 nodos chicos
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
@@ -86,14 +89,13 @@ for _, row in filtered.iterrows():
         """
     )
 
-# --- EDGES (densidad alta 🔥) ---
+# --- EDGES (densidad alta, estilo correcto) ---
 nodes = filtered[["id", "results.category"]].values.tolist()
 
 for node_id, category_val in nodes:
 
     color = color_map.get(category_val, "#cccccc")
 
-    # 🔥 muchas conexiones pero controladas
     connections = random.sample(nodes, min(5, len(nodes)))
 
     for target_id, _ in connections:
