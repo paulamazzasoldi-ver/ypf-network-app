@@ -8,32 +8,33 @@ st.set_page_config(layout="wide")
 
 st.title("Mapa de Influencia Organizacional")
 
-# --- DATA ---
+# =========================
+# DATA
+# =========================
 sheet_id = "1Hj0qe5rbzWHv-W86Yjkm4QL8NcJ_QTQaVQ4tcWQqUlE"
 gid = "2076772300"
 
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
 df = pd.read_csv(url)
 
-# --- LIMPIEZA ---
+# =========================
+# LIMPIEZA COORDENADAS
+# =========================
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
-# --- CENTRADO REAL (Z-SCORE 🔥) ---
+# =========================
+# CENTRAR (SIN DEFORMAR)
+# =========================
 x_mean = df["results.x"].mean()
 y_mean = df["results.y"].mean()
 
-x_std = df["results.x"].std()
-y_std = df["results.y"].std()
+df["x_centered"] = df["results.x"] - x_mean
+df["y_centered"] = df["results.y"] - y_mean
 
-df["x_centered"] = (df["results.x"] - x_mean) / x_std
-df["y_centered"] = (df["results.y"] - y_mean) / y_std
-
-# --- RECORTAR OUTLIERS (🔥 CLAVE) ---
-df["x_centered"] = df["x_centered"].clip(-2, 2)
-df["y_centered"] = df["y_centered"].clip(-2, 2)
-
-# --- FILTROS ---
+# =========================
+# FILTROS
+# =========================
 col1, col2 = st.columns(2)
 
 departments = sorted(df["department"].dropna().unique())
@@ -45,7 +46,9 @@ with col1:
 with col2:
     category = st.multiselect("Categoría", categories, default=categories)
 
-# --- FILTRADO ---
+# =========================
+# FILTRADO
+# =========================
 filtered = df.copy()
 
 if dept != "Todos":
@@ -54,36 +57,48 @@ if dept != "Todos":
 if category:
     filtered = filtered[filtered["results.category"].isin(category)]
 
-# --- RED ---
-net = Network(height="650px", width="100%")
+# =========================
+# RED
+# =========================
+net = Network(height="700px", width="100%")
 
-# 🔥 sin física (NO movimiento)
+# 🔥 SIN MOVIMIENTO
 net.toggle_physics(False)
 
-# 🔥 layout estable
-net.barnes_hut()
+# 🔥 EVITAR QUE PYVIS REORDENE
+net.options.layout = {"improvedLayout": False}
 
-# 🔥 edges rectos
+# 🔥 EDGES RECTOS (menos ruido visual)
 net.options.edges.smooth = False
 
+# =========================
+# COLORES
+# =========================
 color_map = {
     "central": "#2ecc71",
     "intermediary": "#f39c12",
     "peripheral": "#e74c3c"
 }
 
-# --- NODOS ---
+# =========================
+# ESCALA (ajustá si querés)
+# =========================
+scale = 500000  # 🔥 clave para mantener forma orgánica
+
+# =========================
+# NODOS
+# =========================
 for _, row in filtered.iterrows():
 
     color = color_map.get(row["results.category"], "#95a5a6")
 
     net.add_node(
         row["id"],
-        label=" ",  # 🔥 sin labels visibles
-        x=row["x_centered"] * 250,   # 🔥 escala ajustada
-        y=row["y_centered"] * 250,
+        label=" ",  # 🔥 evita mostrar ID
+        x=row["x_centered"] / scale,
+        y=row["y_centered"] / scale,
         color=color,
-        size=2,  # 🔥 nodos chicos
+        size=2,  # 🔥 tamaño tipo producto real
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
@@ -93,13 +108,16 @@ for _, row in filtered.iterrows():
         """
     )
 
-# --- EDGES (densidad alta, estilo correcto) ---
+# =========================
+# EDGES (DENSIDAD ALTA, COLOR CORRECTO)
+# =========================
 nodes = filtered[["id", "results.category"]].values.tolist()
 
-for node_id, category_val in nodes:
+for node_id, cat in nodes:
 
-    color = color_map.get(category_val, "#cccccc")
+    color = color_map.get(cat, "#cccccc")
 
+    # 🔥 densidad alta pero controlada
     connections = random.sample(nodes, min(5, len(nodes)))
 
     for target_id, _ in connections:
@@ -112,6 +130,8 @@ for node_id, category_val in nodes:
                 opacity=0.08
             )
 
-# --- RENDER ---
+# =========================
+# RENDER
+# =========================
 html = net.generate_html()
-components.html(html, height=650, scrolling=True)
+components.html(html, height=700, scrolling=True)
