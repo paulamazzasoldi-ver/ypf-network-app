@@ -102,7 +102,7 @@ for _, row in filtered.iterrows():
         x=x,
         y=y,
         color=color,
-        size=3,
+        size=6,
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
