@@ -76,14 +76,14 @@ net = Network(height="500px", width="100%")
 
 # opciones para mejorar UX
 net.set_options("""
-var options = {
-  interaction: {
-    hover: true,
-    zoomView: true,
-    dragView: true
+{
+  "interaction": {
+    "hover": true,
+    "zoomView": true,
+    "dragView": true
   },
-  physics: {
-    stabilization: true
+  "physics": {
+    "stabilization": true
   }
 }
 """)
