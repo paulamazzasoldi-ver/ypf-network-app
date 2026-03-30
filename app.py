@@ -8,18 +8,18 @@ st.set_page_config(layout="wide")
 
 st.title("Mapa de Influencia Organizacional")
 
-# --- Cargar data ---
+# --- DATA ---
 sheet_id = "1Hj0qe5rbzWHv-W86Yjkm4QL8NcJ_QTQaVQ4tcWQqUlE"
 gid = "2076772300"
 
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
 df = pd.read_csv(url)
 
-# --- Limpieza coordenadas ---
+# --- LIMPIEZA ---
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
-# --- Filtros ---
+# --- FILTROS ---
 col1, col2 = st.columns(2)
 
 departments = sorted(df["department"].dropna().unique())
@@ -31,7 +31,7 @@ with col1:
 with col2:
     category = st.multiselect("Categoría", categories, default=categories)
 
-# --- Filtrar ---
+# --- FILTRADO ---
 filtered = df.copy()
 
 if dept != "Todos":
@@ -40,28 +40,29 @@ if dept != "Todos":
 if category:
     filtered = filtered[filtered["results.category"].isin(category)]
 
-# --- Crear red ---
+# --- RED ---
 net = Network(height="650px", width="100%")
-
 net.toggle_physics(False)
 
-# --- NODOS ---
+color_map = {
+    "central": "#2ecc71",
+    "intermediary": "#f39c12",
+    "peripheral": "#e74c3c"
+}
+
+# --- NODOS (MUY CHICOS 🔥) ---
 for _, row in filtered.iterrows():
 
-    color = {
-        "central": "#2ecc71",
-        "intermediary": "#f39c12",
-        "peripheral": "#e74c3c"
-    }.get(row["results.category"], "#95a5a6")
+    color = color_map.get(row["results.category"], "#95a5a6")
 
     net.add_node(
         row["id"],
-        label=" ",  # 🔥 evita que aparezca el ID
+        label="",
         x=row["results.x"] / 1e7,
         y=row["results.y"] / 1e7,
         color=color,
-        size=3,
-        borderWidth=0.3,
+        size=2,  # 🔥 CLAVE: bien chico
+        borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
         Rank: {row['results.rank']}<br>
@@ -69,15 +70,40 @@ for _, row in filtered.iterrows():
         """
     )
 
-# --- EDGES (simulación liviana 🔥) ---
-nodes = filtered["id"].tolist()
+# --- EDGES (FULL DENSITY 🔥) ---
+nodes = filtered[["id", "results.category"]].values.tolist()
 
-for node in nodes:
-    connections = random.sample(nodes, min(3, len(nodes)))
-    for target in connections:
-        if node != target:
-            net.add_edge(node, target, width=0.2, color="rgba(150,150,150,0.2)")
+for node_id, category in nodes:
 
-# --- Render ---
+    color = color_map.get(category, "#cccccc")
+
+    # 🔥 MÁS conexiones → densidad real
+    connections = random.sample(nodes, min(8, len(nodes)))
+
+    for target_id, _ in connections:
+        if node_id != target_id:
+            net.add_edge(
+                node_id,
+                target_id,
+                width=0.2,  # 🔥 más fino
+                color=color,  # 🔥 color correcto
+                opacity=0.08  # 🔥 súper transparente
+            )
+
+# --- ESTILO VISUAL ---
+net.set_options("""
+{
+  "edges": {
+    "smooth": {
+      "type": "continuous"
+    }
+  },
+  "interaction": {
+    "hover": true
+  }
+}
+""")
+
+# --- RENDER ---
 html = net.generate_html()
 components.html(html, height=650, scrolling=True)
