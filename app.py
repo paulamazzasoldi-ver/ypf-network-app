@@ -119,7 +119,7 @@ for _, row in filtered.iterrows():
 def distance(a, b):
     return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
-threshold = 0.15  # 🔥 ajustar esto es CLAVE
+threshold = 0.5  # 🔥 ajustar esto es CLAVE
 
 for i in range(len(nodes_data)):
     id1, x1, y1, color1 = nodes_data[i]
