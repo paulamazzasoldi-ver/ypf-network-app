@@ -24,14 +24,21 @@ df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
 # =========================
-# CENTRAR (SIN DEFORMAR)
+# CENTRAR + ESCALAR BIEN (🔥 CLAVE)
 # =========================
-x_mean = df["results.x"].mean()
-y_mean = df["results.y"].mean()
 
-df["x_centered"] = df["results.x"] - x_mean
-df["y_centered"] = df["results.y"] - y_mean
+# centrar
+x = df["results.x"]
+y = df["results.y"]
 
+x_centered = x - x.mean()
+y_centered = y - y.mean()
+
+# 🔥 usar el MISMO factor para ambos ejes
+max_range = max(x_centered.abs().max(), y_centered.abs().max())
+
+df["x_norm"] = x_centered / max_range
+df["y_norm"] = y_centered / max_range
 # =========================
 # FILTROS
 # =========================
@@ -93,8 +100,9 @@ for _, row in filtered.iterrows():
 
     color = color_map.get(row["results.category"], "#95a5a6")
 
-    x = row["x_centered"] / scale
-    y = row["y_centered"] / scale
+   scale = 600  # 🔥 ahora esto es visual, no correctivo
+    x=row["x_norm"] * scale,
+    y=row["y_norm"] * scale,
 
     net.add_node(
         row["id"],
