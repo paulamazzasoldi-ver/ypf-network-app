@@ -42,8 +42,13 @@ if category:
 
 # --- RED ---
 net = Network(height="650px", width="100%")
-net.toggle_physics(False)
-
+net.set_options("""
+{
+  "physics": {
+    "enabled": false
+  }
+}
+""")
 color_map = {
     "central": "#2ecc71",
     "intermediary": "#f39c12",
@@ -57,7 +62,7 @@ for _, row in filtered.iterrows():
 
     net.add_node(
         row["id"],
-        label="",
+        label=" ",
         x=row["results.x"] / 1e7,
         y=row["results.y"] / 1e7,
         color=color,
