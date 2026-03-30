@@ -18,7 +18,7 @@ url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=
 df = pd.read_csv(url)
 
 # =========================
-# LIMPIEZA COORDENADAS
+# LIMPIEZA
 # =========================
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
@@ -62,14 +62,15 @@ if category:
 # =========================
 net = Network(height="700px", width="100%")
 
-# 🔥 SIN MOVIMIENTO
 net.toggle_physics(False)
-
-# 🔥 EVITAR QUE PYVIS REORDENE
 net.options.layout = {"improvedLayout": False}
-
-# 🔥 EDGES RECTOS (menos ruido visual)
 net.options.edges.smooth = False
+
+# 🔥 nodos bien renderizados (esto va acá)
+net.options.nodes = {
+    "shape": "dot",
+    "font": {"size": 0}
+}
 
 # =========================
 # COLORES
@@ -81,9 +82,9 @@ color_map = {
 }
 
 # =========================
-# ESCALA (ajustá si querés)
+# ESCALA (más aire entre nodos)
 # =========================
-scale = 500000  # 🔥 clave para mantener forma orgánica
+scale = 250000  # 🔥 más separación
 
 # =========================
 # NODOS
@@ -94,11 +95,11 @@ for _, row in filtered.iterrows():
 
     net.add_node(
         row["id"],
-        label=" ",  # 🔥 evita mostrar ID
+        label=" ",
         x=row["x_centered"] / scale,
         y=row["y_centered"] / scale,
         color=color,
-        size=2,  # 🔥 tamaño tipo producto real
+        size=3,  # 🔥 más visibles
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
@@ -109,25 +110,31 @@ for _, row in filtered.iterrows():
     )
 
 # =========================
-# EDGES (DENSIDAD ALTA, COLOR CORRECTO)
+# EDGES (COLOR + TRANSPARENCIA PRO)
 # =========================
 nodes = filtered[["id", "results.category"]].values.tolist()
 
 for node_id, cat in nodes:
 
-    color = color_map.get(cat, "#cccccc")
+    base_color = color_map.get(cat, "#cccccc")
 
-    # 🔥 densidad alta pero controlada
-    connections = random.sample(nodes, min(5, len(nodes)))
+    # 🔥 convertir HEX → RGBA
+    hex_color = base_color.replace("#", "")
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+
+    edge_color = f"rgba({r},{g},{b},0.05)"  # 🔥 suave tipo original
+
+    connections = random.sample(nodes, min(6, len(nodes)))
 
     for target_id, _ in connections:
         if node_id != target_id:
             net.add_edge(
                 node_id,
                 target_id,
-                width=0.2,
-                color=color,
-                opacity=0.08
+                width=0.1,
+                color=edge_color
             )
 
 # =========================
