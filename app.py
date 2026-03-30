@@ -19,6 +19,13 @@ df = pd.read_csv(url)
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
+# --- CENTRAR COORDENADAS (🔥 CLAVE) ---
+x_mean = df["results.x"].mean()
+y_mean = df["results.y"].mean()
+
+df["x_centered"] = df["results.x"] - x_mean
+df["y_centered"] = df["results.y"] - y_mean
+
 # --- FILTROS ---
 col1, col2 = st.columns(2)
 
@@ -43,13 +50,13 @@ if category:
 # --- RED ---
 net = Network(height="650px", width="100%")
 
-# 🔥 SIN MOVIMIENTO
+# 🔥 sin movimiento
 net.toggle_physics(False)
 
-# 🔥 layout más estable
+# 🔥 layout estable
 net.barnes_hut()
 
-# 🔥 edges más limpios
+# 🔥 edges sin curvas raras
 net.options.edges.smooth = False
 
 color_map = {
@@ -66,25 +73,27 @@ for _, row in filtered.iterrows():
     net.add_node(
         row["id"],
         label=" ",  # 🔥 evita mostrar ID
-        x=row["results.x"] / 1e7,
-        y=row["results.y"] / 1e7,
+        x=row["x_centered"] / 1e7,
+        y=row["y_centered"] / 1e7,
         color=color,
-        size=2,  # 🔥 nodos chicos
+        size=2,  # 🔥 nodos chicos tipo original
         borderWidth=0,
         title=f"""
         <b>{row['name']}</b><br>
         Rank: {row['results.rank']}<br>
-        Categoría: {row['results.category']}
+        Categoría: {row['results.category']}<br>
+        Influence: {row['results.influence']}
         """
     )
 
-# --- EDGES (densos pero controlados) ---
+# --- EDGES (densidad alta 🔥) ---
 nodes = filtered[["id", "results.category"]].values.tolist()
 
-for node_id, category in nodes:
+for node_id, category_val in nodes:
 
-    color = color_map.get(category, "#cccccc")
+    color = color_map.get(category_val, "#cccccc")
 
+    # 🔥 muchas conexiones pero controladas
     connections = random.sample(nodes, min(5, len(nodes)))
 
     for target_id, _ in connections:
