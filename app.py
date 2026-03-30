@@ -47,9 +47,9 @@ for _, row in filtered.iterrows():
 # conexiones por manager
 for manager, group in filtered.groupby("manager_name"):
     employees = group["id"].tolist()
-    for i in range(len(employees)):
-        for j in range(i+1, len(employees)):
-            G.add_edge(employees[i], employees[j])
+    
+    for i in range(len(employees) - 1):
+        G.add_edge(employees[i], employees[i+1])
 
 # --- Visual ---
 net = Network(height="600px", width="100%")
@@ -71,7 +71,8 @@ for node, data in G.nodes(data=True):
 for source, target in G.edges():
     net.add_edge(source, target)
 
-net.save_graph("graph.html")
+html = net.generate_html()
+components.html(html, height=600)
 
 HtmlFile = open("graph.html", "r", encoding="utf-8")
 components.html(HtmlFile.read(), height=600)
