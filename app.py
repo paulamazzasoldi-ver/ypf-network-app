@@ -29,6 +29,10 @@ y_std = df["results.y"].std()
 df["x_centered"] = (df["results.x"] - x_mean) / x_std
 df["y_centered"] = (df["results.y"] - y_mean) / y_std
 
+# --- RECORTAR OUTLIERS (🔥 CLAVE) ---
+df["x_centered"] = df["x_centered"].clip(-2, 2)
+df["y_centered"] = df["y_centered"].clip(-2, 2)
+
 # --- FILTROS ---
 col1, col2 = st.columns(2)
 
@@ -76,8 +80,8 @@ for _, row in filtered.iterrows():
     net.add_node(
         row["id"],
         label=" ",  # 🔥 sin labels visibles
-        x=row["x_centered"] * 300,   # 🔥 escala ajustada
-        y=row["y_centered"] * 300,
+        x=row["x_centered"] * 250,   # 🔥 escala ajustada
+        y=row["y_centered"] * 250,
         color=color,
         size=2,  # 🔥 nodos chicos
         borderWidth=0,
