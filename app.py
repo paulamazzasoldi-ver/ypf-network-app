@@ -2,17 +2,9 @@ import streamlit as st
 import pandas as pd
 from pyvis.network import Network
 import streamlit.components.v1 as components
+import random
 
 st.set_page_config(layout="wide")
-
-# --- CSS fix (interacción) ---
-st.markdown("""
-<style>
-iframe {
-    pointer-events: auto;
-}
-</style>
-""", unsafe_allow_html=True)
 
 st.title("Mapa de Influencia Organizacional")
 
@@ -23,7 +15,7 @@ gid = "2076772300"
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
 df = pd.read_csv(url)
 
-# --- Limpieza de coordenadas ---
+# --- Limpieza coordenadas ---
 df["results.x"] = df["results.x"].astype(str).str.replace(",", "").astype(float)
 df["results.y"] = df["results.y"].astype(str).str.replace(",", "").astype(float)
 
@@ -34,44 +26,26 @@ departments = sorted(df["department"].dropna().unique())
 categories = sorted(df["results.category"].dropna().unique())
 
 with col1:
-    dept = st.selectbox("Departamento", departments)
+    dept = st.selectbox("Departamento", ["Todos"] + list(departments))
 
 with col2:
-    category = st.multiselect(
-        "Categoría",
-        categories,
-        default=categories
-    )
+    category = st.multiselect("Categoría", categories, default=categories)
 
 # --- Filtrar ---
-filtered = df[df["department"] == dept]
+filtered = df.copy()
+
+if dept != "Todos":
+    filtered = filtered[filtered["department"] == dept]
 
 if category:
     filtered = filtered[filtered["results.category"].isin(category)]
 
 # --- Crear red ---
-net = Network(height="600px", width="100%")
+net = Network(height="650px", width="100%")
 
-# 🔥 usamos layout real (sin física)
 net.toggle_physics(False)
 
-# estilo visual
-net.set_options("""
-{
-  "nodes": {
-    "shape": "dot",
-    "scaling": {
-      "min": 3,
-      "max": 6
-    }
-  },
-  "interaction": {
-    "hover": true
-  }
-}
-""")
-
-# --- Nodos ---
+# --- NODOS ---
 for _, row in filtered.iterrows():
 
     color = {
@@ -82,20 +56,28 @@ for _, row in filtered.iterrows():
 
     net.add_node(
         row["id"],
-        label="",  # 🔥 sin nombres visibles
+        label=" ",  # 🔥 evita que aparezca el ID
         x=row["results.x"] / 1e7,
         y=row["results.y"] / 1e7,
         color=color,
-        size=4,  # 🔥 nodos chicos tipo original
-        borderWidth=0.5,
+        size=3,
+        borderWidth=0.3,
         title=f"""
         <b>{row['name']}</b><br>
         Rank: {row['results.rank']}<br>
-        Categoría: {row['results.category']}<br>
-        Influence: {row['results.influence']}
+        Categoría: {row['results.category']}
         """
     )
 
+# --- EDGES (simulación liviana 🔥) ---
+nodes = filtered["id"].tolist()
+
+for node in nodes:
+    connections = random.sample(nodes, min(3, len(nodes)))
+    for target in connections:
+        if node != target:
+            net.add_edge(node, target, width=0.2, color="rgba(150,150,150,0.2)")
+
 # --- Render ---
 html = net.generate_html()
-components.html(html, height=600, scrolling=True)
+components.html(html, height=650, scrolling=True)
